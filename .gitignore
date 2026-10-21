@@ -23,3 +23,18 @@ Thumbs.db
 # Build output
 dist/
 coverage/
+
+# Private keys and certificates
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Local cloud credentials and secret files
+.aws/
+.credentials/
+**/credentials
+**/credentials.*
+secrets/
+**/secrets.*
+*.secret
