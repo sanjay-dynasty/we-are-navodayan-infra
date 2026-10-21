@@ -22,7 +22,7 @@ export class WeAreNavodayanInfrastructureStack extends cdk.Stack {
       ipAddresses: ec2.IpAddresses.cidr(config.vpcCidr),
       maxAzs: config.maxAvailabilityZones,
       natGateways: config.natGateways,
-      restrictDefaultSecurityGroup: false,
+      restrictDefaultSecurityGroup: true,
       subnetConfiguration: [
         {
           name: "Public",

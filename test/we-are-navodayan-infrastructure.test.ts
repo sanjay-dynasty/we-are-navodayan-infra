@@ -25,6 +25,22 @@ describe("We Are Navodayan network infrastructure", () => {
     expect(config.maxAvailabilityZones).toBe(2);
   });
 
+  test("restricts the VPC default security group", () => {
+    const vpc = template.findResources("AWS::EC2::VPC");
+    expect(Object.keys(vpc)).toHaveLength(1);
+
+    // CDK's restrictDefaultSecurityGroup setting is applied to the
+    // generated default security group's ingress and egress rules.
+    const ingressRules = template.findResources(
+      "AWS::EC2::SecurityGroupIngress",
+    );
+    const egressRules = template.findResources(
+      "AWS::EC2::SecurityGroupEgress",
+    );
+
+    expect(Object.keys(ingressRules)).toHaveLength(0);
+    expect(Object.keys(egressRules)).toHaveLength(0);
+  });
   test("creates one VPC with the expected CIDR", () => {
     template.resourceCountIs("AWS::EC2::VPC", 1);
     template.hasResourceProperties("AWS::EC2::VPC", {
