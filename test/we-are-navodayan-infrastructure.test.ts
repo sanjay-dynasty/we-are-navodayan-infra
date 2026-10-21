@@ -1,17 +1,41 @@
-// import * as cdk from 'aws-cdk-lib/core';
-// import { Template } from 'aws-cdk-lib/assertions';
-// import * as WeAreNavodayanInfrastructure from '../lib/we-are-navodayan-infrastructure-stack';
+import * as cdk from "aws-cdk-lib";
+import { Template } from "aws-cdk-lib/assertions";
+import { WeAreNavodayanInfrastructureStack } from "../lib/we-are-navodayan-infrastructure-stack";
 
-// example test. To run these tests, uncomment this file along with the
-// example resource in lib/we-are-navodayan-infrastructure-stack.ts
-test('SQS Queue Created', () => {
-//   const app = new cdk.App();
-//     // WHEN
-//   const stack = new WeAreNavodayanInfrastructure.WeAreNavodayanInfrastructureStack(app, 'MyTestStack');
-//     // THEN
-//   const template = Template.fromStack(stack);
+describe("We Are Navodayan network infrastructure", () => {
+  const app = new cdk.App();
+  const stack = new WeAreNavodayanInfrastructureStack(
+    app,
+    "TestInfrastructureStack",
+  );
+  const template = Template.fromStack(stack);
 
-//   template.hasResourceProperties('AWS::SQS::Queue', {
-//     VisibilityTimeout: 300
-//   });
+  test("creates one VPC with the expected CIDR", () => {
+    template.resourceCountIs("AWS::EC2::VPC", 1);
+
+    template.hasResourceProperties("AWS::EC2::VPC", {
+      CidrBlock: "10.20.0.0/16",
+      EnableDnsSupport: true,
+      EnableDnsHostnames: true,
+    });
+  });
+
+  test("creates six subnets for three subnet tiers across two AZs", () => {
+    template.resourceCountIs("AWS::EC2::Subnet", 6);
+  });
+
+  test("creates an Internet Gateway", () => {
+    template.resourceCountIs("AWS::EC2::InternetGateway", 1);
+  });
+
+  test("does not create a NAT Gateway", () => {
+    template.resourceCountIs("AWS::EC2::NatGateway", 0);
+  });
+
+  test("does not create application compute or database instances", () => {
+    template.resourceCountIs("AWS::EC2::Instance", 0);
+    template.resourceCountIs("AWS::RDS::DBInstance", 0);
+    template.resourceCountIs("AWS::ECS::Service", 0);
+    template.resourceCountIs("AWS::ElasticLoadBalancingV2::LoadBalancer", 0);
+  });
 });
