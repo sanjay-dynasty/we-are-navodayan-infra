@@ -89,6 +89,40 @@ describe("We Are Navodayan network infrastructure", () => {
     }
   });
 
+  test("keeps application subnets private without internet routes", () => {
+    const subnets = template.findResources("AWS::EC2::Subnet");
+    const routes = template.findResources("AWS::EC2::Route");
+    const associations = template.findResources(
+      "AWS::EC2::SubnetRouteTableAssociation",
+    );
+
+    const applicationSubnets = Object.entries(subnets).filter(
+      ([, subnet]: [string, any]) =>
+        subnet.Properties.CidrBlock === "10.20.2.0/24" ||
+        subnet.Properties.CidrBlock === "10.20.3.0/24",
+    );
+
+    expect(applicationSubnets).toHaveLength(2);
+
+    const applicationRouteTableIds = new Set(
+      Object.values(associations)
+        .filter((association: any) =>
+          applicationSubnets.some(
+            ([subnetId]) =>
+              association.Properties.SubnetId.Ref === subnetId,
+          ),
+        )
+        .map((association: any) => association.Properties.RouteTableId.Ref),
+    );
+
+    expect(applicationRouteTableIds.size).toBe(2);
+
+    for (const route of Object.values(routes) as any[]) {
+      if (applicationRouteTableIds.has(route.Properties.RouteTableId.Ref)) {
+        expect(route.Properties.DestinationCidrBlock).not.toBe("0.0.0.0/0");
+      }
+    }
+  });
   test("does not create NAT Gateways", () => {
     template.resourceCountIs("AWS::EC2::NatGateway", 0);
   });
