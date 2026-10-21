@@ -73,6 +73,17 @@ describe("We Are Navodayan network infrastructure", () => {
   test("creates an Internet Gateway and attaches it to the VPC", () => {
     template.resourceCountIs("AWS::EC2::InternetGateway", 1);
     template.resourceCountIs("AWS::EC2::VPCGatewayAttachment", 1);
+
+    const vpcs = template.findResources("AWS::EC2::VPC");
+    const gateways = template.findResources("AWS::EC2::InternetGateway");
+    const attachments = template.findResources("AWS::EC2::VPCGatewayAttachment");
+
+    const vpcId = Object.keys(vpcs)[0];
+    const gatewayId = Object.keys(gateways)[0];
+    const attachment = Object.values(attachments)[0] as any;
+
+    expect(attachment.Properties.VpcId.Ref).toBe(vpcId);
+    expect(attachment.Properties.InternetGatewayId.Ref).toBe(gatewayId);
   });
 
   test("routes both public subnets through the Internet Gateway", () => {
