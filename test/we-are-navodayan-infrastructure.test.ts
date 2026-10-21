@@ -123,6 +123,40 @@ describe("We Are Navodayan network infrastructure", () => {
       }
     }
   });
+  test("keeps database subnets isolated without internet routes", () => {
+    const subnets = template.findResources("AWS::EC2::Subnet");
+    const routes = template.findResources("AWS::EC2::Route");
+    const associations = template.findResources(
+      "AWS::EC2::SubnetRouteTableAssociation",
+    );
+
+    const databaseSubnets = Object.entries(subnets).filter(
+      ([, subnet]: [string, any]) =>
+        subnet.Properties.CidrBlock === "10.20.4.0/24" ||
+        subnet.Properties.CidrBlock === "10.20.5.0/24",
+    );
+
+    expect(databaseSubnets).toHaveLength(2);
+
+    const databaseRouteTableIds = new Set(
+      Object.values(associations)
+        .filter((association: any) =>
+          databaseSubnets.some(
+            ([subnetId]) =>
+              association.Properties.SubnetId.Ref === subnetId,
+          ),
+        )
+        .map((association: any) => association.Properties.RouteTableId.Ref),
+    );
+
+    expect(databaseRouteTableIds.size).toBe(2);
+
+    const databaseRoutes = Object.values(routes).filter((route: any) =>
+      databaseRouteTableIds.has(route.Properties.RouteTableId.Ref),
+    );
+
+    expect(databaseRoutes).toHaveLength(0);
+  });
   test("does not create NAT Gateways", () => {
     template.resourceCountIs("AWS::EC2::NatGateway", 0);
   });
