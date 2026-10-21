@@ -168,6 +168,32 @@ describe("We Are Navodayan network infrastructure", () => {
 
     expect(databaseRoutes).toHaveLength(0);
   });
+  test("associates every subnet with its own route table", () => {
+    const subnets = template.findResources("AWS::EC2::Subnet");
+    const routeTables = template.findResources("AWS::EC2::RouteTable");
+    const associations = template.findResources(
+      "AWS::EC2::SubnetRouteTableAssociation",
+    );
+
+    const subnetIds = Object.keys(subnets);
+    const routeTableIds = new Set(Object.keys(routeTables));
+    const associationResources = Object.values(associations) as any[];
+
+    expect(subnetIds).toHaveLength(6);
+    expect(routeTableIds.size).toBe(6);
+    expect(associationResources).toHaveLength(6);
+
+    const associatedSubnetIds = associationResources.map(
+      (association) => association.Properties.SubnetId.Ref,
+    );
+
+    expect(new Set(associatedSubnetIds).size).toBe(6);
+    expect(new Set(associatedSubnetIds)).toEqual(new Set(subnetIds));
+
+    for (const association of associationResources) {
+      expect(routeTableIds.has(association.Properties.RouteTableId.Ref)).toBe(true);
+    }
+  });
   test("does not create NAT Gateways", () => {
     template.resourceCountIs("AWS::EC2::NatGateway", 0);
   });
