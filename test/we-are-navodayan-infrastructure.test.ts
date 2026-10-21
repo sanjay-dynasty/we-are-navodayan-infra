@@ -1,20 +1,31 @@
 import * as cdk from "aws-cdk-lib";
 import { Template } from "aws-cdk-lib/assertions";
+import { environmentConfigs } from "../lib/config/environment-config";
 import { WeAreNavodayanInfrastructureStack } from "../lib/we-are-navodayan-infrastructure-stack";
 
 describe("We Are Navodayan network infrastructure", () => {
   const app = new cdk.App();
+  const config = environmentConfigs.dev;
+
   const stack = new WeAreNavodayanInfrastructureStack(
     app,
     "TestInfrastructureStack",
+    {
+      config,
+      env: {
+        account: "123456789012",
+        region: config.awsRegion,
+      },
+    },
   );
+
   const template = Template.fromStack(stack);
 
   test("creates one VPC with the expected CIDR", () => {
     template.resourceCountIs("AWS::EC2::VPC", 1);
 
     template.hasResourceProperties("AWS::EC2::VPC", {
-      CidrBlock: "10.20.0.0/16",
+      CidrBlock: config.vpcCidr,
       EnableDnsSupport: true,
       EnableDnsHostnames: true,
     });

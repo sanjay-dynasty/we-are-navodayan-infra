@@ -1,16 +1,27 @@
 import * as cdk from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
+import { EnvironmentConfig } from "./config/environment-config";
+
+export interface WeAreNavodayanInfrastructureStackProps extends cdk.StackProps {
+  readonly config: EnvironmentConfig;
+}
 
 export class WeAreNavodayanInfrastructureStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    props: WeAreNavodayanInfrastructureStackProps,
+  ) {
     super(scope, id, props);
 
+    const { config } = props;
+
     const vpc = new ec2.Vpc(this, "ProjectVpc", {
-      vpcName: "we-are-navodayan-dev-vpc",
-      ipAddresses: ec2.IpAddresses.cidr("10.20.0.0/16"),
-      maxAzs: 2,
-      natGateways: 0,
+      vpcName: `${config.project}-${config.environment}-vpc`,
+      ipAddresses: ec2.IpAddresses.cidr(config.vpcCidr),
+      maxAzs: config.maxAvailabilityZones,
+      natGateways: config.natGateways,
       restrictDefaultSecurityGroup: false,
       subnetConfiguration: [
         {
@@ -32,17 +43,17 @@ export class WeAreNavodayanInfrastructureStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, "ProjectName", {
-      value: "we-are-navodayan",
+      value: config.project,
       description: "Project name",
     });
 
     new cdk.CfnOutput(this, "EnvironmentName", {
-      value: "dev",
+      value: config.environment,
       description: "Deployment environment",
     });
 
     new cdk.CfnOutput(this, "AwsRegion", {
-      value: cdk.Stack.of(this).region,
+      value: config.awsRegion,
       description: "AWS deployment region",
     });
 
@@ -52,7 +63,7 @@ export class WeAreNavodayanInfrastructureStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, "VpcCidr", {
-      value: "10.20.0.0/16",
+      value: config.vpcCidr,
       description: "Development VPC IPv4 CIDR",
     });
 

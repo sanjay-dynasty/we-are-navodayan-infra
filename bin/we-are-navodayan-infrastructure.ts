@@ -23,10 +23,17 @@ if (!config) {
   throw new Error(`Unsupported environment: ${environment}`);
 }
 
+if (project !== config.project) {
+  throw new Error(
+    `Project context mismatch: expected ${config.project}, received ${project}.`,
+  );
+}
+
 const stack = new WeAreNavodayanInfrastructureStack(
   app,
   `${project}-${environment}`,
   {
+    config,
     env: {
       account: process.env.CDK_DEFAULT_ACCOUNT,
       region: config.awsRegion,
