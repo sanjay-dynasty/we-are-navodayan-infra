@@ -21,6 +21,10 @@ describe("We Are Navodayan network infrastructure", () => {
 
   const template = Template.fromStack(stack);
 
+  test("configures two Availability Zones", () => {
+    expect(config.maxAvailabilityZones).toBe(2);
+  });
+
   test("creates one VPC with the expected CIDR", () => {
     template.resourceCountIs("AWS::EC2::VPC", 1);
 
@@ -31,8 +35,51 @@ describe("We Are Navodayan network infrastructure", () => {
     });
   });
 
-  test("creates six subnets for three subnet tiers across two AZs", () => {
+  test("creates six subnets across two Availability Zones", () => {
     template.resourceCountIs("AWS::EC2::Subnet", 6);
+
+    const subnets = template.findResources("AWS::EC2::Subnet");
+    const availabilityZones = new Set(
+      Object.values(subnets).map(
+        (subnet: any) => subnet.Properties.AvailabilityZone,
+      ),
+    );
+
+    expect(availabilityZones.size).toBe(config.maxAvailabilityZones);
+  });
+
+  test("creates two public, two application, and two database subnets", () => {
+    template.resourceCountIs("AWS::EC2::Subnet", 6);
+
+    template.hasResourceProperties("AWS::EC2::Subnet", {
+      CidrBlock: "10.20.0.0/24",
+      MapPublicIpOnLaunch: true,
+    });
+
+    template.hasResourceProperties("AWS::EC2::Subnet", {
+      CidrBlock: "10.20.1.0/24",
+      MapPublicIpOnLaunch: true,
+    });
+
+    template.hasResourceProperties("AWS::EC2::Subnet", {
+      CidrBlock: "10.20.2.0/24",
+      MapPublicIpOnLaunch: false,
+    });
+
+    template.hasResourceProperties("AWS::EC2::Subnet", {
+      CidrBlock: "10.20.3.0/24",
+      MapPublicIpOnLaunch: false,
+    });
+
+    template.hasResourceProperties("AWS::EC2::Subnet", {
+      CidrBlock: "10.20.4.0/24",
+      MapPublicIpOnLaunch: false,
+    });
+
+    template.hasResourceProperties("AWS::EC2::Subnet", {
+      CidrBlock: "10.20.5.0/24",
+      MapPublicIpOnLaunch: false,
+    });
   });
 
   test("creates an Internet Gateway", () => {
